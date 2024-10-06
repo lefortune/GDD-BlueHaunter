@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor.Build.Content;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
@@ -24,6 +25,7 @@ public class PlayerController : MonoBehaviour
 	#region Health_variables
 	public float maxHealth = 5;
 	float currHealth = 5;
+	public Slider HPSlider;
 	#endregion
 
 	#region Attack_variables
@@ -39,8 +41,10 @@ public class PlayerController : MonoBehaviour
 	#region Animation_components
 	private Animator animator;
     private SpriteRenderer sr;
+	private Color originalColor;
 	#endregion
 
+	public Image deathOverlay;
 
     // Start is called before the first frame update
     void Start()
@@ -48,6 +52,7 @@ public class PlayerController : MonoBehaviour
         playerRB = gameObject.GetComponent<Rigidbody2D>();
 		animator = GetComponent<Animator>();
         sr = GetComponent<SpriteRenderer>();
+		originalColor = sr.color;
 		attackTimer = 0;
     }
 
@@ -75,10 +80,27 @@ public class PlayerController : MonoBehaviour
 			feetContact = false;
 		}
 
-		if (movement == Vector2.zero) {
-			animator.SetBool("Moving", false);
-		} else {
-			animator.SetBool("Moving", true);
+		bool isMovingHorizontally = Mathf.Abs(x_input) > 0.01f && feetContact;
+		if (!isAttacking) {  // Prevent movement/jump animation if attacking
+			if (isMovingHorizontally) {
+				// Play moving animation only if grounded and moving horizontally
+				animator.SetBool("Moving", true);
+			} else {
+				animator.SetBool("Moving", false);
+			}
+
+			// If the player is not moving at all and is grounded, set idle animation
+			if (x_input == 0 && feetContact) {
+				animator.SetBool("Moving", false);  // This will revert to the idle state in Animator
+			}
+    	}
+
+		if (x_input > 0) {
+			currDirection = Vector2.right;  // Facing right
+			sr.flipX = false;  // Ensure sprite faces right
+		} else if (x_input < 0) {
+			currDirection = Vector2.left;  // Facing left
+			sr.flipX = true;  // Ensure sprite faces left
 		}
 		animator.SetFloat("DirX", currDirection.x);
 
@@ -89,7 +111,7 @@ public class PlayerController : MonoBehaviour
 	}
 
     bool isFloor(GameObject obj) {
-		return obj.layer == LayerMask.NameToLayer ("Floor");
+		return obj.layer == LayerMask.NameToLayer("Floor") || obj.transform.CompareTag("Enemy");
 	}
 
     // use coll.gameObject if you need a reference coll's GameObject
@@ -97,6 +119,7 @@ public class PlayerController : MonoBehaviour
 		if (isFloor(coll.gameObject)) {
 			floorContactCount++;
 			feetContact = true; // Set to true on first contact
+			animator.SetBool("grounded", true);
     }
 	}
 
@@ -105,6 +128,7 @@ public class PlayerController : MonoBehaviour
 			floorContactCount--;
 			if (floorContactCount <= 0) {
 				feetContact = false; // Only set to false if no more contacts
+				animator.SetBool("grounded", false);
         }
     }
     }
@@ -119,32 +143,79 @@ public class PlayerController : MonoBehaviour
 		isAttacking = true;
 		animator.SetTrigger("attack");
 		yield return new WaitForSeconds(hitboxTiming);
-		//FindObjectOfType<AudioManager>().Play("");
-		RaycastHit2D[] hits = Physics2D.BoxCastAll(playerRB.position + currDirection, new Vector2(0.5f, 0.5f), 0f, Vector2.zero);
-		foreach (RaycastHit2D hit in hits) {
+		// Define the size of the hitbox (make it bigger)
+		Vector2 hitboxSize = new Vector2(1.5f, 1.5f);  // Adjust this to change the hitbox size
+		// Define the offset to shift the hitbox downwards (or in other directions)
+		Vector2 hitboxOffset = new Vector2(0, -1f);  // Shift hitbox down by 0.5 units
+		// Calculate the hitbox center, offset by currDirection and hitboxOffset
+		Vector2 hitboxCenter = playerRB.position + currDirection + hitboxOffset;
+
+		RaycastHit2D[] hits = Physics2D.BoxCastAll(hitboxCenter, hitboxSize, 0f, Vector2.zero);
+    	foreach (RaycastHit2D hit in hits) {
 			if (hit.transform.CompareTag("Enemy")) {
 				hit.transform.GetComponent<EnemyController>().TakeDamage(damage);
+				FindObjectOfType<AudioManager>().Play("EnemyHurt");
 			}
-		}
-		yield return new WaitForSeconds(hitboxTiming);
+   		}
+		yield return new WaitForSeconds(endAnimationTiming);
 		isAttacking = false;
 	}
+
+	void OnDrawGizmosSelected()
+{
+    // Set the color for the Gizmo
+    Gizmos.color = Color.red;
+	if (playerRB != null)
+    {
+        // Define hitbox size and offset (same as in AttackRoutine)
+        Vector2 hitboxSize = new Vector2(1.5f, 1.5f);  // Same as in AttackRoutine
+        Vector2 hitboxOffset = new Vector2(0, -1f);  // Same as in AttackRoutine
+
+        // Calculate the center of the hitbox
+        Vector2 hitboxCenter = playerRB.position + currDirection + hitboxOffset;
+
+        // Draw the hitbox for visualization
+        Gizmos.DrawWireCube(hitboxCenter, hitboxSize);
+    }
+}
 
 	public void TakeDamage(float value) {
 		currHealth -= value;
 		if (currHealth <= 0) {
 			Die();
 		}
+		HPSlider.value = currHealth / maxHealth;
+		StartCoroutine(FlashRed());
 	}
+
+	private IEnumerator FlashRed()
+    {
+        sr.color = Color.red;
+        yield return new WaitForSeconds(0.1f);
+        sr.color = originalColor;
+        // More flashes
+        yield return new WaitForSeconds(0.1f);
+        sr.color = Color.red;
+        yield return new WaitForSeconds(0.1f);
+        sr.color = originalColor;
+    }
+
 	public void Heal(float value) {
 		currHealth += value;
 		currHealth = Mathf.Min(currHealth, maxHealth);
+		HPSlider.value = currHealth / maxHealth;
 	}
 
 	public void Die() {
+		GameManager.Instance.isGamePaused = true; // Freeze all scripts
+		deathOverlay.gameObject.SetActive(true);
 		Destroy(this.gameObject);
-		//GameObject gm = GameObject.FindWithTag("GameController");
-		//gm.GetComponent<GameManager>().LoseGame();
+	}
+
+	public void GetBuff() {
+		damage += 1;
+		attackSpeed -= 0.5f;
+		movespeed += 3;
 	}
 
 }

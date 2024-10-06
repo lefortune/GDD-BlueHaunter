@@ -12,44 +12,80 @@ public class EnemyController : MonoBehaviour
     float currHealth;
     public float enemyDamage;
     public float enemyAttackTimer;
+    bool isAttacking;
     Rigidbody2D EnemyRB;
     private SpriteRenderer spriteRenderer;
+    private BoxCollider2D boxCollider;
     private Color originalColor;
     // Start is called before the first frame update
     void Start()
     {
         EnemyRB = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+        boxCollider = GetComponent<BoxCollider2D>();
         originalColor = spriteRenderer.color;
         currHealth = maxHealth;
+
+        player = GameObject.FindGameObjectWithTag("Player").transform;
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (GameManager.Instance.isGamePaused) return;
         if (player == null) {
             return;
         }
         Move();
+        Debug.Log(this.gameObject + "says hi");
     }
 
     private void Move() {
         Vector2 direction = player.position - transform.position;
-        EnemyRB.velocity = direction.normalized * moveSpeed;
+        direction.y = 0; // Ignore the Y component to prevent flying up or down
+        EnemyRB.velocity = new Vector2(direction.normalized.x * moveSpeed, EnemyRB.velocity.y);
+    }
+
+    IEnumerator AttackRoutine() {
+        isAttacking = true;
+
+        while (isAttacking) {
+            AttackPlayer();
+            yield return new WaitForSeconds(enemyAttackTimer);
+        }
     }
 
     private void AttackPlayer() {
-        RaycastHit2D[] hits = Physics2D.CircleCastAll(transform.position, 1f, Vector2.zero);
-        foreach (RaycastHit2D hit in hits) {
-            if (hit.transform.CompareTag("Player")) {
-                hit.transform.GetComponent<PlayerController>().TakeDamage(enemyDamage);
+		Vector2 center = (Vector2)transform.position + (Vector2)boxCollider.offset;
+        Vector2 size = boxCollider.size; // This gives the size of the collider
+
+        RaycastHit2D[] hits = Physics2D.BoxCastAll(center, size, 0f, Vector2.zero);
+
+    	foreach (RaycastHit2D hit in hits) {
+			if (hit.transform.CompareTag("Player")) {
+                FindObjectOfType<AudioManager>().Play("EnemyAttack");
+				hit.transform.GetComponent<PlayerController>().TakeDamage(enemyDamage);
+                
+			}
+   		}
+	}
+
+    private void OnCollisionEnter2D(Collision2D coll)
+    {
+        if (coll.transform.CompareTag("Player"))
+        {
+            if (!isAttacking) // Check if not currently attacking
+            {
+                StartCoroutine(AttackRoutine());
             }
         }
     }
 
-    private void OnCollisionEnter2D(Collision2D other) {
-        if (other.transform.CompareTag("Player")) {
-            AttackPlayer();
+    private void OnCollisionExit2D(Collision2D coll)
+    {
+        if (coll.transform.CompareTag("Player"))
+        {
+            isAttacking = false; // Stop attacking when player exits
         }
     }
 
@@ -64,16 +100,10 @@ public class EnemyController : MonoBehaviour
 
     private IEnumerator FlashRed()
     {
-        // Change color to red
         spriteRenderer.color = Color.red;
-
-        // Wait for a short duration
         yield return new WaitForSeconds(0.1f);
-
-        // Change back to the original color
         spriteRenderer.color = originalColor;
-
-        // Optionally, you can add more flashes
+        // More flashes
         yield return new WaitForSeconds(0.1f);
         spriteRenderer.color = Color.red;
         yield return new WaitForSeconds(0.1f);
