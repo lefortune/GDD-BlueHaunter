@@ -171,8 +171,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5f09c9fd2ecc47b49fe67af797098ed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 3
+  moveSpeed: 2
   player: {fileID: 0}
-  maxHealth: 5
+  maxHealth: 4
   enemyDamage: 1
-  enemyAttackTimer: 3
+  enemyAttackTimer: 2
