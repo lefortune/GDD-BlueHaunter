@@ -19,8 +19,8 @@ public class PlayerController : MonoBehaviour
 	private int floorContactCount = 0; // Counter for floor contacts
 	public bool feetContact;
 	// Clamping values
-    public float minX = 0f;
-    public float maxX = 1000f; 
+    public float minX;
+    public float maxX; 
 	#endregion
 
 	#region Health_variables
@@ -229,12 +229,12 @@ public class PlayerController : MonoBehaviour
 		if (seed == 1) speedSoulsCollected += 1;
 		if (seed == 2) atkspeedSoulsCollected += 1; // Experimental, not implemented
 
-		damage = 1 + (damageSoulsCollected * 0.5f);
-		movespeed = 3 + (speedSoulsCollected);
+		damage = 1 + (damageSoulsCollected * 0.25f);
+		movespeed = 3 + (speedSoulsCollected * 0.5f);
 		jumpforce = 800 + (speedSoulsCollected * 10);
 		attackSpeed = 1 - (atkspeedSoulsCollected * 0.1f);
 
-		GameObject text = Instantiate(enemyKillText, transform.position + Vector3.up * 2, Quaternion.identity);
+		GameObject text = Instantiate(enemyKillText, transform.position + Vector3.up * Random.Range(0.5f, 2.5f), Quaternion.identity);
         text.GetComponent<SoulTextScript>().SetTextProperties(seed);
 
 		StartCoroutine(AbsorbSoul());

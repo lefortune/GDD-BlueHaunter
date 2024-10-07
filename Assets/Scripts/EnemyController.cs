@@ -155,7 +155,7 @@ public class EnemyController : MonoBehaviour
         FindObjectOfType<AudioManager>().Play("EnemyDie");
         FindObjectOfType<PlayerController>().UpdateStats(seed);
         Debug.Log("Seed:" + seed);
-        Destroy(this.gameObject, 2);
+        Destroy(this.gameObject, 1f);
     }
 
     private IEnumerator FlashRed()

@@ -121,7 +121,7 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 5
+  m_Mass: 1
   m_LinearDrag: 0
   m_AngularDrag: 0.05
   m_GravityScale: 5
@@ -195,9 +195,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveSpeed: 2
   player: {fileID: 0}
-  maxHealth: 4
+  maxHealth: 5
   enemyDamage: 1
   enemyAttackSpeed: 1
   hitboxTiming: 0.4
   seed: 0
-  deathText: {fileID: 73739030974992753, guid: 62f812b937bb0474b9816b881ff795b4, type: 3}

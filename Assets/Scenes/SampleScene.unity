@@ -1540,8 +1540,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   player: {fileID: 640922023}
-  xMin: -28
-  xMax: 28
+  xMin: -26
+  xMax: 20
   yMin: -2.4
   yMax: -2.4
 --- !u!1 &520154597
@@ -2078,8 +2078,8 @@ MonoBehaviour:
   movespeed: 3
   jumpforce: 800
   feetContact: 0
-  minX: -28
-  maxX: 28
+  minX: -30
+  maxX: 24
   maxHealth: 5
   HPSlider: {fileID: 140995522}
   damage: 1
@@ -2740,9 +2740,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyPrefab: {fileID: 5099372094669676837, guid: 452cefeaa03fc49df9f7f7c6e4e862e9, type: 3}
-  spawnInterval: 8
-  leftEdgeX: -30
-  rightEdgeX: 30
+  initialSpawnInterval: 8
+  currentSpawnInterval: 0
+  leftEdgeX: -35
+  rightEdgeX: 29
   spawnY: -5
 --- !u!4 &911081326
 Transform:
