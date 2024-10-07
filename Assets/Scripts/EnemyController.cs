@@ -18,6 +18,7 @@ public class EnemyController : MonoBehaviour
     public float hitboxTiming = 0.2f;
     bool isAtPlayer;
     bool isAttacking;
+    bool isDying = false;
     private Coroutine attackCoroutine;
     #endregion
 
@@ -31,7 +32,6 @@ public class EnemyController : MonoBehaviour
 
     #region Gameplay variables
     public int seed;
-    public GameObject deathText;
     #endregion
 
     // Start is called before the first frame update
@@ -55,10 +55,10 @@ public class EnemyController : MonoBehaviour
         if (player == null) {
             return;
         }
-        if (!isAttacking) {
+        if (!isAttacking && !isDying) {
             Move();
         }
-        if (isAtPlayer && attackCoroutine == null) {
+        if (isAtPlayer && attackCoroutine == null && !isDying && !isAttacking) {
             attackCoroutine = StartCoroutine(AttackRoutine());
         }
     }
@@ -77,7 +77,8 @@ public class EnemyController : MonoBehaviour
     }
 
     IEnumerator AttackRoutine() {
-        while (isAtPlayer) {
+        while (isAtPlayer && !isDying) {
+            Debug.Log("Enemy winds up");
             isAttacking = true;
             EnemyRB.velocity = Vector2.zero;
             animator.SetTrigger("attack");
@@ -95,7 +96,7 @@ public class EnemyController : MonoBehaviour
                     FindObjectOfType<AudioManager>().Play("EnemyAttack");
                     hit.transform.GetComponent<PlayerController>().TakeDamage(enemyDamage);
                     Debug.Log($"Hit: {hit}");
-                } else Debug.Log("No hit detected");
+                } else Debug.Log("Miss");
             }
             yield return new WaitForSeconds(enemyAttackSpeed);
             isAttacking = false;
@@ -149,12 +150,12 @@ public class EnemyController : MonoBehaviour
 
     public void Die()
     {
+        isDying = true;
+        animator.SetTrigger("die");
         FindObjectOfType<AudioManager>().Play("EnemyDie");
-        GameObject text = Instantiate(deathText, transform.position + Vector3.up * 2, Quaternion.identity);
-        text.GetComponent<SoulTextScript>().SetTextProperties(seed);
         FindObjectOfType<PlayerController>().UpdateStats(seed);
-        Debug.Log(seed);
-        Destroy(this.gameObject);
+        Debug.Log("Seed:" + seed);
+        Destroy(this.gameObject, 2);
     }
 
     private IEnumerator FlashRed()

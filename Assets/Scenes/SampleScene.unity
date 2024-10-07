@@ -2075,7 +2075,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0480412817eda4805abb989c5defc34c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  movespeed: 5
+  movespeed: 3
   jumpforce: 800
   feetContact: 0
   minX: -28
@@ -2090,6 +2090,7 @@ MonoBehaviour:
   speedSoulsCollected: 0
   atkspeedSoulsCollected: 0
   deathOverlay: {fileID: 453439112}
+  enemyKillText: {fileID: 73739030974992753, guid: 62f812b937bb0474b9816b881ff795b4, type: 3}
 --- !u!50 &640922029
 Rigidbody2D:
   serializedVersion: 4

@@ -7,9 +7,10 @@ using UnityEngine.UI;
 public class PlayerController : MonoBehaviour
 {
 	#region Movement_variables
-    public float movespeed = 5;
+    public float movespeed = 3;
 	public float jumpforce = 800;
 	float x_input;
+	private bool canMove = true;
 	#endregion
 
 	#region Physics_components
@@ -51,6 +52,7 @@ public class PlayerController : MonoBehaviour
 	#endregion
 
 	public Image deathOverlay;
+	public GameObject enemyKillText;
 
     // Start is called before the first frame update
     void Start()
@@ -65,6 +67,8 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+		if (!canMove) return;
+
 		x_input = Input.GetAxisRaw("Horizontal");
 		Move();
 		if (Input.GetMouseButtonDown(0)) {
@@ -186,6 +190,7 @@ public class PlayerController : MonoBehaviour
 }
 
 	public void TakeDamage(float value) {
+		Debug.Log("Player took " + value + " dmg");
 		currHealth -= value;
 		if (currHealth <= 0) {
 			Die();
@@ -219,15 +224,30 @@ public class PlayerController : MonoBehaviour
 		Destroy(this.gameObject);
 	}
 
-	public void UpdateStats(int s) {
-		if (s == 0) damageSoulsCollected += 1;
-		if (s == 1) speedSoulsCollected += 1;
-		if (s == 2) atkspeedSoulsCollected += 1; // Experimental, not implemented
+	public void UpdateStats(int seed) {
+		if (seed == 0) damageSoulsCollected += 1;
+		if (seed == 1) speedSoulsCollected += 1;
+		if (seed == 2) atkspeedSoulsCollected += 1; // Experimental, not implemented
 
 		damage = 1 + (damageSoulsCollected * 0.5f);
-		movespeed = 5 + (speedSoulsCollected);
+		movespeed = 3 + (speedSoulsCollected);
 		jumpforce = 800 + (speedSoulsCollected * 10);
 		attackSpeed = 1 - (atkspeedSoulsCollected * 0.1f);
+
+		GameObject text = Instantiate(enemyKillText, transform.position + Vector3.up * 2, Quaternion.identity);
+        text.GetComponent<SoulTextScript>().SetTextProperties(seed);
+
+		StartCoroutine(AbsorbSoul());
 	}
+
+	private IEnumerator AbsorbSoul()
+    {
+        canMove = false;
+		sr.flipX = !sr.flipX;
+		animator.SetTrigger("AbsorbSoul");
+        yield return new WaitForSeconds(2f);
+		sr.flipX = !sr.flipX;
+        canMove = true;
+    }
 
 }
