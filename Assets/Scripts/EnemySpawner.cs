@@ -5,7 +5,7 @@ using UnityEngine;
 public class EnemySpawner : MonoBehaviour
 {
     public GameObject enemyPrefab;
-    public float spawnInterval = 2f; // Time in seconds between spawns
+    public float spawnInterval; // Time in seconds between spawns
     public float leftEdgeX = -30f; // Left edge x-coordinate
     public float rightEdgeX = 30f; // Right edge x-coordinate
     public float spawnY = -5f; // Desired y-coordinate for spawning
@@ -17,7 +17,7 @@ public class EnemySpawner : MonoBehaviour
 
     private IEnumerator SpawnEnemies()
     {
-        while (true)
+        while (!GameManager.Instance.isGamePaused)
         {
             SpawnEnemy();
             yield return new WaitForSeconds(spawnInterval);

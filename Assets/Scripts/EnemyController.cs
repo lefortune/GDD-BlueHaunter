@@ -8,24 +8,43 @@ public class EnemyController : MonoBehaviour
 {
     public float moveSpeed;
     public Transform player;
+    Vector2 currDirection;
+
+    #region Attack variables
     public float maxHealth;
     float currHealth;
     public float enemyDamage;
-    public float enemyAttackTimer;
+    public float enemyAttackSpeed;
+    public float hitboxTiming = 0.2f;
+    bool isAtPlayer;
     bool isAttacking;
+    private Coroutine attackCoroutine;
+    #endregion
+
+    #region Animation variables
     Rigidbody2D EnemyRB;
+    private Animator animator;
     private SpriteRenderer spriteRenderer;
     private BoxCollider2D boxCollider;
     private Color originalColor;
+    #endregion
+
+    #region Gameplay variables
+    public int seed;
+    public GameObject deathText;
+    #endregion
+
     // Start is called before the first frame update
     void Start()
     {
         EnemyRB = GetComponent<Rigidbody2D>();
+        animator = GetComponent<Animator>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         boxCollider = GetComponent<BoxCollider2D>();
         originalColor = spriteRenderer.color;
         currHealth = maxHealth;
 
+        seed = Random.Range(0, 2);
         player = GameObject.FindGameObjectWithTag("Player").transform;
     }
 
@@ -36,48 +55,79 @@ public class EnemyController : MonoBehaviour
         if (player == null) {
             return;
         }
-        Move();
-        Debug.Log(this.gameObject + "says hi");
+        if (!isAttacking) {
+            Move();
+        }
+        if (isAtPlayer && attackCoroutine == null) {
+            attackCoroutine = StartCoroutine(AttackRoutine());
+        }
     }
 
     private void Move() {
         Vector2 direction = player.position - transform.position;
         direction.y = 0; // Ignore the Y component to prevent flying up or down
         EnemyRB.velocity = new Vector2(direction.normalized.x * moveSpeed, EnemyRB.velocity.y);
+        if (EnemyRB.velocity.x < 0) {
+            currDirection = Vector2.left;
+            spriteRenderer.flipX = true;
+        } else if (EnemyRB.velocity.x > 0) {
+            currDirection = Vector2.right;
+            spriteRenderer.flipX = false;
+        }
     }
 
     IEnumerator AttackRoutine() {
-        isAttacking = true;
+        while (isAtPlayer) {
+            isAttacking = true;
+            EnemyRB.velocity = Vector2.zero;
+            animator.SetTrigger("attack");
+            yield return new WaitForSeconds(hitboxTiming);
 
-        while (isAttacking) {
-            AttackPlayer();
-            yield return new WaitForSeconds(enemyAttackTimer);
+            Vector2 hitboxSize = new Vector2(1.6f, 2.2f);  // Adjust this to change the hitbox size
+            // Define the offset to shift the hitbox downwards (or in other directions)
+            Vector2 hitboxOffset = new Vector2(-0.2f, 0f); 
+            // Calculate the hitbox center, offset by currDirection and hitboxOffset
+            Vector2 hitboxCenter = EnemyRB.position + currDirection / 2 + hitboxOffset;
+            RaycastHit2D[] hits = Physics2D.BoxCastAll(hitboxCenter, hitboxSize, 0f, Vector2.zero, 0f); // Direction is zero for the box
+
+            foreach (RaycastHit2D hit in hits) {
+                if (hit.transform.CompareTag("Player")) {
+                    FindObjectOfType<AudioManager>().Play("EnemyAttack");
+                    hit.transform.GetComponent<PlayerController>().TakeDamage(enemyDamage);
+                    Debug.Log($"Hit: {hit}");
+                } else Debug.Log("No hit detected");
+            }
+            yield return new WaitForSeconds(enemyAttackSpeed);
+            isAttacking = false;
+            attackCoroutine = null;
+        }
+        
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        // Set the color for the Gizmo
+        Gizmos.color = Color.red;
+        if (player != null)
+        {
+            Vector2 size = new Vector2(1.6f, 2f);
+            Vector2 offset = new Vector2(-0.2f, 0f); 
+            Vector2 center = EnemyRB.position + currDirection / 2 + offset;
+
+            // Draw the hitbox for visualization
+            Gizmos.DrawWireCube(center, size);
         }
     }
 
     private void AttackPlayer() {
-		Vector2 center = (Vector2)transform.position + (Vector2)boxCollider.offset;
-        Vector2 size = boxCollider.size; // This gives the size of the collider
-
-        RaycastHit2D[] hits = Physics2D.BoxCastAll(center, size, 0f, Vector2.zero);
-
-    	foreach (RaycastHit2D hit in hits) {
-			if (hit.transform.CompareTag("Player")) {
-                FindObjectOfType<AudioManager>().Play("EnemyAttack");
-				hit.transform.GetComponent<PlayerController>().TakeDamage(enemyDamage);
-                
-			}
-   		}
+        
 	}
 
     private void OnCollisionEnter2D(Collision2D coll)
     {
         if (coll.transform.CompareTag("Player"))
         {
-            if (!isAttacking) // Check if not currently attacking
-            {
-                StartCoroutine(AttackRoutine());
-            }
+            isAtPlayer = true;
         }
     }
 
@@ -85,17 +135,26 @@ public class EnemyController : MonoBehaviour
     {
         if (coll.transform.CompareTag("Player"))
         {
-            isAttacking = false; // Stop attacking when player exits
+            isAtPlayer = false;
         }
     }
 
     public void TakeDamage(float value) {
         currHealth -= value;
         if (currHealth <= 0) {
-            FindObjectOfType<AudioManager>().Play("EnemyDie");
-            Destroy(this.gameObject);
+            Die();
         }
         StartCoroutine(FlashRed());
+    }
+
+    public void Die()
+    {
+        FindObjectOfType<AudioManager>().Play("EnemyDie");
+        GameObject text = Instantiate(deathText, transform.position + Vector3.up * 2, Quaternion.identity);
+        text.GetComponent<SoulTextScript>().SetTextProperties(seed);
+        FindObjectOfType<PlayerController>().UpdateStats(seed);
+        Debug.Log(seed);
+        Destroy(this.gameObject);
     }
 
     private IEnumerator FlashRed()

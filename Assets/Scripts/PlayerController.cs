@@ -7,8 +7,8 @@ using UnityEngine.UI;
 public class PlayerController : MonoBehaviour
 {
 	#region Movement_variables
-    public float movespeed;
-	public float jumpforce;
+    public float movespeed = 5;
+	public float jumpforce = 800;
 	float x_input;
 	#endregion
 
@@ -36,6 +36,12 @@ public class PlayerController : MonoBehaviour
 	public float endAnimationTiming = 0.1f;
 	bool isAttacking;
 	Vector2 currDirection;
+	#endregion
+
+	#region Gameplay_components
+	public int damageSoulsCollected = 0;
+    public int speedSoulsCollected = 0;
+    public int atkspeedSoulsCollected = 0;
 	#endregion
 
 	#region Animation_components
@@ -143,12 +149,12 @@ public class PlayerController : MonoBehaviour
 		isAttacking = true;
 		animator.SetTrigger("attack");
 		yield return new WaitForSeconds(hitboxTiming);
-		// Define the size of the hitbox (make it bigger)
-		Vector2 hitboxSize = new Vector2(1.5f, 1.5f);  // Adjust this to change the hitbox size
+		Vector2 hitboxSize = new Vector2(2.5f, 2f);  // Adjust this to change the hitbox size
 		// Define the offset to shift the hitbox downwards (or in other directions)
-		Vector2 hitboxOffset = new Vector2(0, -1f);  // Shift hitbox down by 0.5 units
+		Vector2 hitboxOffset = new Vector2(0, -1f); 
 		// Calculate the hitbox center, offset by currDirection and hitboxOffset
 		Vector2 hitboxCenter = playerRB.position + currDirection + hitboxOffset;
+		FindObjectOfType<AudioManager>().Play("PlayerAttack");
 
 		RaycastHit2D[] hits = Physics2D.BoxCastAll(hitboxCenter, hitboxSize, 0f, Vector2.zero);
     	foreach (RaycastHit2D hit in hits) {
@@ -168,7 +174,7 @@ public class PlayerController : MonoBehaviour
 	if (playerRB != null)
     {
         // Define hitbox size and offset (same as in AttackRoutine)
-        Vector2 hitboxSize = new Vector2(1.5f, 1.5f);  // Same as in AttackRoutine
+        Vector2 hitboxSize = new Vector2(2.5f, 2f);  // Same as in AttackRoutine
         Vector2 hitboxOffset = new Vector2(0, -1f);  // Same as in AttackRoutine
 
         // Calculate the center of the hitbox
@@ -207,15 +213,21 @@ public class PlayerController : MonoBehaviour
 	}
 
 	public void Die() {
+		FindObjectOfType<AudioManager>().Play("PlayerDie");
 		GameManager.Instance.isGamePaused = true; // Freeze all scripts
 		deathOverlay.gameObject.SetActive(true);
 		Destroy(this.gameObject);
 	}
 
-	public void GetBuff() {
-		damage += 1;
-		attackSpeed -= 0.5f;
-		movespeed += 3;
+	public void UpdateStats(int s) {
+		if (s == 0) damageSoulsCollected += 1;
+		if (s == 1) speedSoulsCollected += 1;
+		if (s == 2) atkspeedSoulsCollected += 1; // Experimental, not implemented
+
+		damage = 1 + (damageSoulsCollected * 0.5f);
+		movespeed = 5 + (speedSoulsCollected);
+		jumpforce = 800 + (speedSoulsCollected * 10);
+		attackSpeed = 1 - (atkspeedSoulsCollected * 0.1f);
 	}
 
 }
