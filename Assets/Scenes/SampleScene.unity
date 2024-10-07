@@ -2977,11 +2977,11 @@ MonoBehaviour:
     source: {fileID: 0}
   - name: EnemyAttack
     group: SFX
-    clip: {fileID: 8300000, guid: d666d69a425e340818e8414ac01ed229, type: 3}
+    clip: {fileID: 8300000, guid: 81b242a88f73f4b65a57aff6dc3676a2, type: 3}
     source: {fileID: 0}
   - name: EnemyHurt
     group: SFX
-    clip: {fileID: 8300000, guid: 7f430bccfef224ee097f19e893988629, type: 3}
+    clip: {fileID: 8300000, guid: 9bd1a079a176548bcb0160a92813a460, type: 3}
     source: {fileID: 0}
   - name: PlayerAttack
     group: SFX
@@ -2989,7 +2989,7 @@ MonoBehaviour:
     source: {fileID: 0}
   - name: PlayerDie
     group: SFX
-    clip: {fileID: 8300000, guid: 60b4d3e19410746e6b218dea5420c3b0, type: 3}
+    clip: {fileID: 8300000, guid: c2238f05b9c0a478897d02b4bced17d2, type: 3}
     source: {fileID: 0}
   musicGroup: {fileID: 243998503013657228, guid: 71b02338fcece8343abcdfeb304f819f, type: 2}
   sfxGroup: {fileID: 243729444503017978, guid: 71b02338fcece8343abcdfeb304f819f, type: 2}
