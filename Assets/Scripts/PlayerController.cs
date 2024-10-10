@@ -1,7 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor.Build.Content;
 using UnityEngine;
+using UnityEngine.InputSystem.Utilities;
 using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
@@ -33,8 +35,8 @@ public class PlayerController : MonoBehaviour
 	public float damage = 1;
 	public float attackSpeed = 1;
 	float attackTimer;
-	public float hitboxTiming = 0.1f;
-	public float endAnimationTiming = 0.1f;
+	public float hitboxTiming = 0.55f;
+	public float endAnimationTiming = 0.4f;
 	bool isAttacking;
 	Vector2 currDirection;
 	#endregion
@@ -51,8 +53,8 @@ public class PlayerController : MonoBehaviour
 	private Color originalColor;
 	#endregion
 
-	public Image deathOverlay;
 	public GameObject enemyKillText;
+	public GameManager gameManager;
 
     // Start is called before the first frame update
     void Start()
@@ -82,13 +84,13 @@ public class PlayerController : MonoBehaviour
 	private void Move() {
 		Vector2 movement = new Vector2(x_input * movespeed, playerRB.velocity.y);
 		playerRB.velocity = movement;
-		if (Input.GetKeyDown(KeyCode.Space) && feetContact)
-		{
-			playerRB.velocity = new Vector2(playerRB.velocity.x, 0);
-			playerRB.AddForce(new Vector2(0, jumpforce));
-			animator.SetTrigger("Jump");
-			feetContact = false;
-		}
+//		if (Input.GetKeyDown(KeyCode.Space) && feetContact)
+//		{
+//			playerRB.velocity = new Vector2(playerRB.velocity.x, 0);
+//			playerRB.AddForce(new Vector2(0, jumpforce));
+//			animator.SetTrigger("Jump");
+//			feetContact = false;
+//		}
 
 		bool isMovingHorizontally = Mathf.Abs(x_input) > 0.01f && feetContact;
 		if (!isAttacking) {  // Prevent movement/jump animation if attacking
@@ -192,6 +194,7 @@ public class PlayerController : MonoBehaviour
 	public void TakeDamage(float value) {
 		Debug.Log("Player took " + value + " dmg");
 		currHealth -= value;
+		FindObjectOfType<CameraFollow>().CameraShake(0.1f, 0.1f);
 		if (currHealth <= 0) {
 			Die();
 		}
@@ -219,8 +222,7 @@ public class PlayerController : MonoBehaviour
 
 	public void Die() {
 		FindObjectOfType<AudioManager>().Play("PlayerDie");
-		GameManager.Instance.isGamePaused = true; // Freeze all scripts
-		deathOverlay.gameObject.SetActive(true);
+		gameManager.FreezeGame(); // Freeze all scripts
 		Destroy(this.gameObject);
 	}
 
@@ -230,11 +232,16 @@ public class PlayerController : MonoBehaviour
 		if (seed == 2) atkspeedSoulsCollected += 1; // Experimental, not implemented
 
 		damage = 1 + (damageSoulsCollected * 0.25f);
+
 		movespeed = 3 + (speedSoulsCollected * 0.5f);
 		jumpforce = 800 + (speedSoulsCollected * 10);
-		attackSpeed = 1 - (atkspeedSoulsCollected * 0.1f);
 
-		GameObject text = Instantiate(enemyKillText, transform.position + Vector3.up * Random.Range(0.5f, 2.5f), Quaternion.identity);
+		attackSpeed = Math.Max(1 - (atkspeedSoulsCollected * 0.08f), 0);
+		hitboxTiming = Math.Max(0.55f - (atkspeedSoulsCollected * 0.03f), 0);
+		endAnimationTiming = Math.Max(0.4f - (atkspeedSoulsCollected * 0.03f), 0);
+		animator.speed = 1 + (atkspeedSoulsCollected * 0.25f);
+
+		GameObject text = Instantiate(enemyKillText, transform.position + Vector3.up * UnityEngine.Random.Range(0.5f, 2.5f), Quaternion.identity);
         text.GetComponent<SoulTextScript>().SetTextProperties(seed);
 
 		StartCoroutine(AbsorbSoul());
@@ -244,10 +251,14 @@ public class PlayerController : MonoBehaviour
     {
         canMove = false;
 		sr.flipX = !sr.flipX;
+		float temp = new float();
+		temp = animator.speed;
+		animator.speed = 1;
 		animator.SetTrigger("AbsorbSoul");
         yield return new WaitForSeconds(2f);
 		sr.flipX = !sr.flipX;
         canMove = true;
+		animator.speed = temp;
     }
 
 }

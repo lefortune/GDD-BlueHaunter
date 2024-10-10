@@ -19,6 +19,7 @@ public class EnemySpawner : MonoBehaviour
 
     private IEnumerator SpawnEnemies()
     {
+        yield return new WaitForSeconds(10f);
         while (!GameManager.Instance.isGamePaused)
         {
             SpawnEnemy();

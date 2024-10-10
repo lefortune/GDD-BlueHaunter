@@ -15,7 +15,22 @@ public class SoulTextScript : MonoBehaviour
         // Detach the text from its parent so it stays after the enemy is destroyed
         transform.SetParent(null); 
         // Start the countdown to destroy the text
-        Destroy(gameObject, displayTime);
+        StartCoroutine(Fade());
+    }
+
+    private IEnumerator Fade()
+    {
+        yield return new WaitForSeconds(1f);
+        float fadeDuration = 0.5f;
+        float elapsedTime = 0f;
+
+        while (elapsedTime < fadeDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            textMesh.alpha = Mathf.Lerp(1, 0, elapsedTime / fadeDuration);
+            yield return null;
+        }
+        Destroy(gameObject);
     }
 
     public void SetTextProperties(int seed)

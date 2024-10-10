@@ -44,7 +44,7 @@ public class EnemyController : MonoBehaviour
         originalColor = spriteRenderer.color;
         currHealth = maxHealth;
 
-        seed = Random.Range(0, 2);
+        seed = Random.Range(0, 3);
         player = GameObject.FindGameObjectWithTag("Player").transform;
     }
 
@@ -92,7 +92,7 @@ public class EnemyController : MonoBehaviour
             RaycastHit2D[] hits = Physics2D.BoxCastAll(hitboxCenter, hitboxSize, 0f, Vector2.zero, 0f); // Direction is zero for the box
 
             foreach (RaycastHit2D hit in hits) {
-                if (hit.transform.CompareTag("Player")) {
+                if (hit.transform.CompareTag("Player") && !isDying) {
                     FindObjectOfType<AudioManager>().Play("EnemyAttack");
                     hit.transform.GetComponent<PlayerController>().TakeDamage(enemyDamage);
                     Debug.Log($"Hit: {hit}");
